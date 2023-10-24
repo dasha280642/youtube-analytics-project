@@ -5,6 +5,7 @@ import os
 from googleapiclient.discovery import build
 
 import isodate
+import os
 
 
 # YT_API_KEY скопирован из гугла и вставлен в переменные окружения
