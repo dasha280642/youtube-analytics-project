@@ -24,42 +24,34 @@ def print_info(dict_to_print: dict) -> None:
 class Channel:
     def __init__(self, channel_id: str):
         self.channel_id = channel_id
+        self.channel_info = self.get_channel_info()
+        self.title = self.channel_info['items'][0]['snippet']['title']
+        self.channel_description = self.channel_info['items'][0]['snippet']['description']
+        self.url = f"https://www.youtube.com/channel/{self.channel_id}"
+        self.subscriber_count = self.channel_info['items'][0]['statistics']['subscriberCount']
+        self.video_count = self.channel_info['items'][0]['statistics']['videoCount']
+        self.view_count = self.channel_info['items'][0]['statistics']['viewCount']
+
+    @classmethod
+    def get_service(cls):
+        return youtube
 
     def get_channel_info(self):
         channel = youtube.channels().list(id=self.channel_id, part='snippet,statistics').execute()
         return channel
 
-    def get_playlists(self):
-        playlists = youtube.playlists().list(channelId=self.channel_id,
-                                             part='contentDetails,snippet',
-                                             maxResults=50,
-                                             ).execute()
-        return playlists
+    def to_json(self):
+        channel_data = {
+            'channel_id': self.channel_id,
+            'channel_title': self.title,
+            'channel_description': self.channel_description,
+            'channel_link': self.channel_link,
+            'subscriber_count': self.subscriber_count,
+            'video_count': self.video_count,
+            'view_count': self.view_count
+        }
+        with open('channel_data.json', 'w') as file:
+            json.dump(channel_data, file)
 
-    def get_playlist_videos(self, playlist_id: str):
-        playlist_videos = youtube.playlistItems().list(playlistId=playlist_id,
-                                                       part='contentDetails',
-                                                       maxResults=50,
-                                                       ).execute()
-        video_ids = [video['contentDetails']['videoId'] for video in playlist_videos['items']]
-        return video_ids
-
-    def get_video_duration(self, video_id: str):
-        video_response = youtube.videos().list(part='contentDetails,statistics',
-                                               id=video_id
-                                               ).execute()
-        iso_8601_duration = video_response['items'][0]['contentDetails']['duration']
-        duration = isodate.parse_duration(iso_8601_duration)
-        return duration
-
-    def get_video_stats(self, video_id: str):
-        video_response = youtube.videos().list(part='snippet,statistics,contentDetails,topicDetails',
-                                               id=video_id
-                                               ).execute()
-        video_title = video_response['items'][0]['snippet']['title']
-        view_count = video_response['items'][0]['statistics']['viewCount']
-        like_count = video_response['items'][0]['statistics']['likeCount']
-        comment_count = video_response['items'][0]['statistics']['commentCount']
-        return video_title, view_count, like_count, comment_count
 
 
