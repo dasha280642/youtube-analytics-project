@@ -40,17 +40,17 @@ class Channel:
         channel = youtube.channels().list(id=self.channel_id, part='snippet,statistics').execute()
         return channel
 
-    def to_json(self):
+    def to_json(self, file_name):
         channel_data = {
             'channel_id': self.channel_id,
             'channel_title': self.title,
             'channel_description': self.channel_description,
-            'channel_link': self.channel_link,
+            'channel_link': self.url,
             'subscriber_count': self.subscriber_count,
             'video_count': self.video_count,
             'view_count': self.view_count
         }
-        with open('channel_data.json', 'w') as file:
+        with open(file_name, 'w') as file:
             json.dump(channel_data, file)
 
 
