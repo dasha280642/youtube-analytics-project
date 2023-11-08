@@ -4,9 +4,9 @@ import os
 
 # необходимо установить через: pip install google-api-python-client
 from googleapiclient.discovery import build
+from datetime import timedelta
 
 import isodate
-import os
 
 
 # YT_API_KEY скопирован из гугла и вставлен в переменные окружения
@@ -79,3 +79,54 @@ class Channel:
         }
         with open(file_name, 'w') as file:
             json.dump(channel_data, file)
+
+
+class PlayList:
+    def __init__(self, playlist_id: str):
+        self.playlist_id = playlist_id
+        self.playlist_info = self.get_playlist_info()
+        self.title = self.playlist_info['items'][0]['snippet']['title']
+        self.url = f"https://www.youtube.com/playlist?list={self.playlist_id}"
+        self.video_count = self.playlist_info['items'][0]['contentDetails']['itemCount']
+
+    def __str__(self):
+        return f"{self.title} ({self.url})"
+
+    def get_playlist_info(self):
+        playlist = youtube.playlists().list(id=self.playlist_id, part='snippet,contentDetails').execute()
+        return playlist
+
+    @property
+    def total_duration(self):
+        duration = timedelta()
+        videos = self.get_playlist_videos()
+        for video in videos:
+            if 'duration' in video['contentDetails']:
+                duration += timedelta(
+                    seconds=isodate.parse_duration(video['contentDetails']['duration']).total_seconds())
+        hours = duration.seconds // 3600
+        minutes = (duration.seconds % 3600) // 60
+        seconds = duration.seconds % 60
+        return timedelta(hours=hours, minutes=minutes, seconds=seconds)
+
+    def show_best_video(self):
+        videos = self.get_playlist_videos()
+        best_video = max(videos, key=lambda x: int(x['statistics']['likeCount']))
+        return f"https://www.youtube.com/watch?v={best_video['contentDetails']['videoId']}"
+
+    def get_playlist_videos(self):
+        videos = []
+        next_page_token = None
+        while True:
+            request = youtube.playlistItems().list(
+                playlistId=self.playlist_id,
+                part='snippet,contentDetails',
+                maxResults=50,
+                pageToken=next_page_token
+            )
+            response = request.execute()
+            videos.extend(response['items'])
+            next_page_token = response.get('nextPageToken')
+            if not next_page_token:
+                break
+        return videos
